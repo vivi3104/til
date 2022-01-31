@@ -1,32 +1,35 @@
 import sys
 import cv2
-from math import dist
+from math import sqrt, fsum
+
+def dist(p0, p1):
+    return sqrt( fsum( (x0**2 + x1**2) for x0, x1 in zip(p0, p1) ) )
 
 def getVector_f(p0, p1, normed=True):
-    vec = [p0[0] - p1[0], p0[1] - p1[1]]
-    __distance = dist(p0, p1)
+    vec = (p0[0] - p1[0], p0[1] - p1[1])
+    distance = dist(p0, p1)
     if normed:
-        vec = [float(vec[0])/__distance, float(vec[1])/__distance]
-    return vec, __distance
+        vec = (float(vec[0])/distance, float(vec[1])/distance)
+    return vec, distance
 
 # 2D vector -90 degree rotation
 def getPerpendicularVector(vec):
-    return [-vec[1], vec[0]]
+    return (-vec[1], vec[0])
 
 def getCenterPoint(p0, p1):
-    center_pt = [(p0[0] + p1[0])//2, (p0[1] + p1[1])//2]
+    center_pt = ((p0[0] + p1[0])//2, (p0[1] + p1[1])//2)
     return center_pt
 
 def process_mouse_event(event, x, y, flags, params):
     raw_image     = params['image']
-    window_name = params['window_name']
-    points      = params['points']
-    num_points  = params['num_points']
+    window_name   = params['window_name']
+    points        = params['points']
+    num_points    = params['num_points']
     perpendicular_line_length  = params['perpendicular_line_length']
 
     if event == cv2.EVENT_LBUTTONDOWN:
         if len(points) < num_points:
-            points.append([x, y])
+            points.append((x, y))
         
     if event == cv2.EVENT_RBUTTONDOWN:
         if len(points) > 0:
@@ -45,24 +48,24 @@ def process_mouse_event(event, x, y, flags, params):
     # draw pre-line
     if len(points) % 2 == 1:
         last_pt = points[-1]
-        if not last_pt == [x, y]:
-            cv2.line(image, last_pt, [x, y], (0, 255, 0), 1, lineType=cv2.LINE_AA)
+        if not last_pt == (x, y):
+            cv2.line(image, last_pt, (x, y), (0, 255, 0), 1, lineType=cv2.LINE_AA)
 
             # draw perpendicular line at current point
-            center_pt = getCenterPoint(last_pt, [x,y])
-            vec_f, distance = getVector_f(last_pt, [x, y], normed=True)
+            center_pt = getCenterPoint(last_pt, (x, y))
+            vec_f, distance = getVector_f(last_pt, (x, y), normed=True)
             perpendicular_vector = getPerpendicularVector(vec_f)
-            start_pt = [x + int(perpendicular_vector[0] *  perpendicular_line_length//2), y + int(perpendicular_vector[1] *  perpendicular_line_length//2)] 
-            end_pt   = [x + int(perpendicular_vector[0] * -perpendicular_line_length//2), y + int(perpendicular_vector[1] * -perpendicular_line_length//2)]
+            start_pt = (x + int(perpendicular_vector[0] *  perpendicular_line_length//2), y + int(perpendicular_vector[1] *  perpendicular_line_length//2))
+            end_pt   = (x + int(perpendicular_vector[0] * -perpendicular_line_length//2), y + int(perpendicular_vector[1] * -perpendicular_line_length//2))
             cv2.line(image, start_pt, end_pt, (0, 255, 0), 1, lineType=cv2.LINE_AA)
             cv2.putText(image, "{:.1f} pix".format(distance), center_pt, cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 1, cv2.LINE_AA)
 
     # draw lines for the clicked points
     nLines = len(points)//2
-    lines = [ [points[2*j], points[2*j+1]] for j in range(nLines) ]
+    lines = [ (points[2*j], points[2*j+1]) for j in range(nLines) ]
     for lpt in lines:
         cv2.line(image, lpt[0], lpt[1], (0, 0, 255), 1, lineType=cv2.LINE_AA)
-        distance = dist(*lpt)
+        distance = dist(lpt[0], lpt[1])
         center_pt = getCenterPoint(lpt[0], lpt[1])
         cv2.putText(image, "{:.1f} pix".format(distance), center_pt, cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 1, cv2.LINE_AA)
 
