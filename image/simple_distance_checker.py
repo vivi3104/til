@@ -1,9 +1,25 @@
-import sys
+from ctypes.wintypes import tagRECT
+import sys, os
 import cv2
 from math import sqrt, fsum
+from cv2 import EVENT_FLAG_ALTKEY
+from cv2 import EVENT_MBUTTONDBLCLK
+import numpy as np
+
+def cv_imread(input_file, flags=cv2.IMREAD_COLOR, dtype=np.uint8):
+    return cv2.imdecode(np.fromfile(input_file, dtype=dtype), flags)
+
+def cv_imwrite(output_image_path, img, params=None):
+    result, buffer = cv2.imencode(os.path.splitext(output_image_path)[1], img, params)
+    if result:
+        with open(output_image_path, mode='wb') as f:
+            buffer.tofile(f)
+        return True
+    else:
+        return False
 
 def dist(p0, p1):
-    return sqrt( fsum( (x0**2 + x1**2) for x0, x1 in zip(p0, p1) ) )
+    return sqrt( fsum( [(x1 - x0)**2 for x0, x1 in zip(p0, p1)] ) )
 
 def getVector_f(p0, p1, normed=True):
     vec = (p0[0] - p1[0], p0[1] - p1[1])
@@ -21,35 +37,41 @@ def getCenterPoint(p0, p1):
     return center_pt
 
 def process_mouse_event(event, x, y, flags, params):
-    raw_image     = params['image']
+    input_image   = params['input_image']
     window_name   = params['window_name']
     points        = params['points']
-    num_points    = params['num_points']
+    output_image_path  = params['output_image_path']
     perpendicular_line_length  = params['perpendicular_line_length']
 
     if event == cv2.EVENT_LBUTTONDOWN:
-        if len(points) < num_points:
-            points.append((x, y))
+        if not (flags & cv2.EVENT_FLAG_CTRLKEY):
+            if len(points) > 0:
+                if not points[-1] == (x, y):
+                    points.append((x, y))
+            else:
+                points.append((x, y))
+                
         
     if event == cv2.EVENT_RBUTTONDOWN:
         if len(points) > 0:
             points.pop(-1)
     
-    image = raw_image.copy()
-    h, w = image.shape[:2]
-    cv2.line(image, (x, 0), (x, h), (255, 0, 0), 1)
-    cv2.line(image, (0, y), (w, y), (255, 0, 0), 1)
+    img = input_image.copy()
+    
+    h, w = img.shape[:2]
+    cv2.line(img, (x, 0), (x, h), (255, 0, 0), 1)
+    cv2.line(img, (0, y), (w, y), (255, 0, 0), 1)
 
     # draw points
     if len(points) > 0:
         for i in range(len(points)):
-            cv2.circle(image, (points[i][0], points[i][1]), 1, (0, 0, 255), 2)
+            cv2.circle(img, (points[i][0], points[i][1]), 1, (0, 0, 255), 2)
 
     # draw pre-line
     if len(points) % 2 == 1:
         last_pt = points[-1]
         if not last_pt == (x, y):
-            cv2.line(image, last_pt, (x, y), (0, 255, 0), 1, lineType=cv2.LINE_AA)
+            cv2.line(img, last_pt, (x, y), (0, 255, 0), 1, lineType=cv2.LINE_AA)
 
             # draw perpendicular line at current point
             center_pt = getCenterPoint(last_pt, (x, y))
@@ -57,25 +79,30 @@ def process_mouse_event(event, x, y, flags, params):
             perpendicular_vector = getPerpendicularVector(vec_f)
             start_pt = (x + int(perpendicular_vector[0] *  perpendicular_line_length//2), y + int(perpendicular_vector[1] *  perpendicular_line_length//2))
             end_pt   = (x + int(perpendicular_vector[0] * -perpendicular_line_length//2), y + int(perpendicular_vector[1] * -perpendicular_line_length//2))
-            cv2.line(image, start_pt, end_pt, (0, 255, 0), 1, lineType=cv2.LINE_AA)
-            cv2.putText(image, "{:.1f} pix".format(distance), center_pt, cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 1, cv2.LINE_AA)
+            cv2.line(img, start_pt, end_pt, (0, 255, 0), 1, lineType=cv2.LINE_AA)
+            cv2.putText(img, "{:.1f} pix".format(distance), center_pt, cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 1, cv2.LINE_AA)
 
     # draw lines for the clicked points
     nLines = len(points)//2
     lines = [ (points[2*j], points[2*j+1]) for j in range(nLines) ]
     for lpt in lines:
-        cv2.line(image, lpt[0], lpt[1], (0, 0, 255), 1, lineType=cv2.LINE_AA)
+        cv2.line(img, lpt[0], lpt[1], (0, 0, 255), 1, lineType=cv2.LINE_AA)
         distance = dist(lpt[0], lpt[1])
         center_pt = getCenterPoint(lpt[0], lpt[1])
-        cv2.putText(image, "{:.1f} pix".format(distance), center_pt, cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(img, "{:.1f} pix".format(distance), center_pt, cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 1, cv2.LINE_AA)
 
-    cv2.putText(image, "({0}, {1})".format(x, y), (0, 15), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.putText(img, "({0}, {1})".format(x, y), (0, 15), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.imshow(window_name, img)
 
-    cv2.imshow(window_name, image)
+    if event == cv2.EVENT_LBUTTONDOWN:
+        if flags & cv2.EVENT_FLAG_CTRLKEY:
+            cv_imwrite(output_image_path, img)
+            cv2.putText(img, "saving image to: " + output_image_path, (0, 50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1, cv2.LINE_AA)
+            cv2.imshow(window_name, img)
 
 def main():
     '''
-    measure distance between clicked 2 points
+    Show clicked 2 points line with distance in pix
     '''
     args = sys.argv
     if len(args) < 2:
@@ -83,8 +110,14 @@ def main():
         return -1
     
     input_image_path = args[1]
+    if not os.path.isfile(input_image_path):
+        print("Error - Unepxected input path: ", input_image_path)
+        return -1
+
+    input_image_path_wo_ext, _ = os.path.splitext(input_image_path)
+    output_image_path = input_image_path_wo_ext + '_dist.jpg'
     
-    image = cv2.imread(input_image_path)
+    image = cv_imread(input_image_path, cv2.IMREAD_COLOR, np.uint8)
     h = image.shape[0]
 
     # expect full HD physical display
@@ -97,10 +130,10 @@ def main():
     perpendicular_line_length = 30
     window_name = 'mouse_event'
     params = {
-        "image" : target_image,
-        "window_name" : window_name,
-        "points" : points,
-        "num_points" : num_points,
+        "input_image"  : target_image,
+        "window_name"  : window_name,
+        "points"       : points,
+        "output_image_path" : output_image_path,
         "perpendicular_line_length" : perpendicular_line_length
     }
 
@@ -108,6 +141,13 @@ def main():
     cv2.setMouseCallback(window_name=window_name, on_mouse=process_mouse_event, param=params)
     cv2.imshow(window_name, target_image)
     cv2.waitKey(0)
+    # while True:
+    #     key = cv2.waitKey(20)
+    #     if (key == 27 or key == ord('q')):
+    #         break
+    #     elif (key == ord('s')):
+    #         # tried to capture image but failed
+    #         cv_imwrite(output_image_path, target_image)
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
