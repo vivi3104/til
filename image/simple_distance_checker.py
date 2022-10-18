@@ -87,7 +87,7 @@ def process_mouse_event(event, x, y, flags, params):
                 perpendicular_vec[1] * -perpendicular_line_length//2))
             cv2.line(img, start_pt, end_pt, (0, 255, 0),
                      1, lineType=cv2.LINE_AA)
-            cv2.putText(img, "{:.1f} pix".format(distance*resize_ratio),
+            cv2.putText(img, "{:.1f} pixel".format(distance*resize_ratio),
                         center_pt, cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 1, cv2.LINE_AA)
 
     # draw lines for the clicked points
@@ -98,7 +98,7 @@ def process_mouse_event(event, x, y, flags, params):
         distance = dist(lpt[0], lpt[1])
         original_distance = distance * resize_ratio
         center_pt = getCenterPoint(lpt[0], lpt[1])
-        cv2.putText(img, "{:.1f} pix".format(original_distance), center_pt,
+        cv2.putText(img, "{:.1f} pixel".format(original_distance), center_pt,
                     cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 1, cv2.LINE_AA)
 
     # save image when CTRL + LEFT CLICK
@@ -122,7 +122,7 @@ def process_mouse_event(event, x, y, flags, params):
 
 def main():
     '''
-    Show clicked 2 points line with distance in pix
+    Show clicked 2 points line with distance in pixel
     '''
     args = sys.argv
     if len(args) < 2:
