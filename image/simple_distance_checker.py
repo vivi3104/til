@@ -5,8 +5,8 @@ from math import sqrt, fsum, ceil
 import numpy as np
 
 
-def cv_imread(input_file, flags=cv2.IMREAD_COLOR, dtype=np.uint8):
-    return cv2.imdecode(np.fromfile(input_file, dtype=dtype), flags)
+def cv_imread(input_image_path, flags=cv2.IMREAD_COLOR, dtype=np.uint8):
+    return cv2.imdecode(np.fromfile(input_image_path, dtype=dtype), flags)
 
 
 def cv_imwrite(output_image_path, img, params=None):
