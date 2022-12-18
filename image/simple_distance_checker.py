@@ -28,8 +28,9 @@ def getVector_f(p0, p1, normed=True):
     vec = (p0[0] - p1[0], p0[1] - p1[1])
     distance = dist(p0, p1)
     if normed:
-        vec = (float(vec[0])/distance, float(vec[1])/distance)
+        vec = (float(vec[0]) / distance, float(vec[1]) / distance)
     return vec, distance
+
 
 # 2D vector -90 degree rotation
 
@@ -39,7 +40,7 @@ def getPerpendicularVector(vec):
 
 
 def getCenterPoint(p0, p1):
-    center_pt = ((p0[0] + p1[0])//2, (p0[1] + p1[1])//2)
+    center_pt = ((p0[0] + p1[0]) // 2, (p0[1] + p1[1]) // 2)
     return center_pt
 
 
@@ -74,25 +75,35 @@ def process_mouse_event(event, x, y, flags, params):
     if len(points) % 2 == 1:
         last_pt = points[-1]
         if not last_pt == (x, y):
-            cv2.line(img, last_pt, (x, y), (0, 255, 0),
-                     1, lineType=cv2.LINE_AA)
+            cv2.line(img,
+                     last_pt, (x, y), (0, 255, 0),
+                     1,
+                     lineType=cv2.LINE_AA)
 
             # draw perpendicular line at current point
             center_pt = getCenterPoint(last_pt, (x, y))
             vec_f, distance = getVector_f(last_pt, (x, y), normed=True)
             perpendicular_vec = getPerpendicularVector(vec_f)
-            start_pt = (x + int(perpendicular_vec[0] * perpendicular_line_length//2), y + int(
-                perpendicular_vec[1] * perpendicular_line_length//2))
-            end_pt = (x + int(perpendicular_vec[0] * -perpendicular_line_length//2), y + int(
-                perpendicular_vec[1] * -perpendicular_line_length//2))
-            cv2.line(img, start_pt, end_pt, (0, 255, 0),
-                     1, lineType=cv2.LINE_AA)
-            cv2.putText(img, "{:.1f} pixel".format(distance*resize_ratio),
-                        center_pt, cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 1, cv2.LINE_AA)
+            start_pt = (
+                x + int(perpendicular_vec[0] * perpendicular_line_length // 2),
+                y + int(perpendicular_vec[1] * perpendicular_line_length // 2))
+            end_pt = (
+                x +
+                int(perpendicular_vec[0] * -perpendicular_line_length // 2),
+                y +
+                int(perpendicular_vec[1] * -perpendicular_line_length // 2))
+            cv2.line(img,
+                     start_pt,
+                     end_pt, (0, 255, 0),
+                     1,
+                     lineType=cv2.LINE_AA)
+            cv2.putText(img, "{:.1f} pixel".format(distance * resize_ratio),
+                        center_pt, cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 1,
+                        cv2.LINE_AA)
 
     # draw lines for the clicked points
-    nLines = len(points)//2
-    lines = [(points[2*j], points[2*j+1]) for j in range(nLines)]
+    nLines = len(points) // 2
+    lines = [(points[2 * j], points[2 * j + 1]) for j in range(nLines)]
     for lpt in lines:
         cv2.line(img, lpt[0], lpt[1], (0, 0, 255), 1, lineType=cv2.LINE_AA)
         distance = dist(lpt[0], lpt[1])
@@ -141,10 +152,12 @@ def main():
     h = image.shape[0]
 
     # expect full HD physical display
-    h_ratio = 720/float(h)
+    h_ratio = 720 / float(h)
     scale_down_factor = h_ratio if h_ratio < 1 else 1
-    target_image = cv2.resize(
-        image, dsize=None, fx=scale_down_factor, fy=scale_down_factor)
+    target_image = cv2.resize(image,
+                              dsize=None,
+                              fx=scale_down_factor,
+                              fy=scale_down_factor)
 
     points = []
     perpendicular_line_length = 30
@@ -153,14 +166,15 @@ def main():
         "input_image": target_image,
         "window_name": window_name,
         "points": points,
-        "resize_ratio": 1/scale_down_factor,
+        "resize_ratio": 1 / scale_down_factor,
         "output_image_path": output_image_path,
         "perpendicular_line_length": perpendicular_line_length
     }
 
     cv2.namedWindow(window_name)
     cv2.setMouseCallback(window_name=window_name,
-                         on_mouse=process_mouse_event, param=params)
+                         on_mouse=process_mouse_event,
+                         param=params)
     cv2.imshow(window_name, target_image)
     cv2.waitKey(0)
     # while True:
@@ -174,4 +188,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main()
+    sys.exit(main())
