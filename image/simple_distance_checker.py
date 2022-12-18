@@ -118,6 +118,7 @@ def process_mouse_event(event, x, y, flags, params):
             cv_imwrite(output_image_path, img)
             cv2.putText(img, "saving image to: " + output_image_path, (0, 50),
                         cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1, cv2.LINE_AA)
+            print("saving image to: " + output_image_path)
 
     # draw cross lines and x,y coordinate in original image scale
     h, w = img.shape[:2]
